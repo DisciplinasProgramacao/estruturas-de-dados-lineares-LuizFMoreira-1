@@ -207,13 +207,19 @@ public class App {
      * @param pedido O pedido que deve ser finalizado.
      */
     public static void finalizarPedido(Pedido pedido) {
-    	
-    	// TODO
+    	pilhaPedidos.empilhar(pedido);
+        System.out.println("Pedido finalizado e adicionado à pilha!");
     }
     
     public static void listarProdutosPedidosRecentes() {
-    	
-    	// TODO
+    	 
+        Pedido pedido = pilhaPedidos.desempilhar();
+
+        
+        for (Produto p : pedido.getProdutos()) {
+            System.out.println("- " + p.toString());
+        }
+     pilhaPedidos.empilhar(pedido);
     }
     
 	public static void main(String[] args) {
@@ -227,8 +233,7 @@ public class App {
         
         int opcao = -1;
       
-        do{
-            opcao = menu();
+        do{            opcao = menu();
             switch (opcao) {
                 case 1 -> listarTodosOsProdutos();
                 case 2 -> mostrarProduto(localizarProduto());
