@@ -1,6 +1,7 @@
 import java.nio.charset.Charset;
 import java.time.LocalDate;
 import java.util.Scanner;
+import java.util.function.Function;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -20,7 +21,8 @@ public class App {
     static int quantosProdutos = 0;
 
     /** Pilha de pedidos */
-    static Pilha<Pedido> pilhaPedidos = new Pilha<>();
+   static Lista<Pedido> listaPedidos = new Lista<>();
+
         
     static void limparTela() {
         System.out.print("\033[H\033[2J");
@@ -35,7 +37,7 @@ public class App {
 
     /** Cabeçalho principal da CLI do sistema */
     static void cabecalho() {
-        System.out.println("AEDs II COMÉRCIO DE COISINHAS");
+        System.out.println("AEDs II COMÉRCIO");
         System.out.println("=============================");
     }
    
@@ -57,16 +59,18 @@ public class App {
      * @return Um inteiro com a opção do usuário.
      */
     static int menu() {
-        cabecalho();
-        System.out.println("1 - Listar todos os produtos");
-        System.out.println("2 - Procurar por um produto, por código");
-        System.out.println("3 - Procurar por um produto, por nome");
-        System.out.println("4 - Iniciar novo pedido");
-        System.out.println("5 - Fechar pedido");
-        System.out.println("6 - Listar produtos dos pedidos mais recentes");
-        System.out.println("0 - Sair");
-        System.out.print("Digite sua opção: ");
-        return Integer.parseInt(teclado.nextLine());
+      cabecalho();
+    System.out.println("1 - Listar todos os produtos");
+    System.out.println("2 - Procurar por um produto, por código");
+    System.out.println("3 - Procurar por um produto, por nome");
+    System.out.println("4 - Iniciar novo pedido");
+    System.out.println("5 - Fechar pedido");
+    System.out.println("6 - Listar produtos dos pedidos mais recentes");
+    System.out.println("7 - Exibir faturamento do comércio de produtos"); // nova opção
+    System.out.println("8 - Exibir quantidade de pedidos em determinado período"); // nova opção
+    System.out.println("0 - Sair");
+    System.out.print("Digite sua opção: ");
+    return Integer.parseInt(teclado.nextLine());
     }
     
     /**
@@ -101,8 +105,11 @@ public class App {
     	} catch (IOException excecaoArquivo) {
     		produtosCadastrados = null;
     	} finally {
-    		arquivo.close();
-    	}
+    if (arquivo != null) {
+        arquivo.close();
+    }
+}
+
     	
     	return produtosCadastrados;
     }
@@ -127,7 +134,12 @@ public class App {
         
         return produto;   
     }
-    
+   
+
+
+
+
+
     /** Localiza um produto no vetor de produtos cadastrados, a partir do nome de produto informado pelo usuário, e o retorna. 
      *  A busca não é sensível ao caso. Em caso de não encontrar o produto, retorna null
      *  @return O produto encontrado ou null, caso o produto não tenha sido localizado no vetor de produtos cadastrados.
@@ -206,21 +218,59 @@ public class App {
      * Finaliza um pedido, momento no qual ele deve ser armazenado em uma pilha de pedidos.
      * @param pedido O pedido que deve ser finalizado.
      */
-    public static void finalizarPedido(Pedido pedido) {
-    	pilhaPedidos.empilhar(pedido);
-        System.out.println("Pedido finalizado e adicionado à pilha!");
-    }
-    
-    public static void listarProdutosPedidosRecentes() {
-    	 
-        Pedido pedido = pilhaPedidos.desempilhar();
+ /** Finaliza um pedido e adiciona à lista de pedidos */
+public static void finalizarPedido(Pedido pedido) {
+    listaPedidos.inserir(pedido, listaPedidos.tamanho());
+    System.out.println("Pedido finalizado e adicionado à lista!");
+}
 
-        
-        for (Produto p : pedido.getProdutos()) {
-            System.out.println("- " + p.toString());
-        }
-     pilhaPedidos.empilhar(pedido);
+
+
+    
+    public static void listarProdutosPedidosPrimeiro() {
+    	 
+       ////to do //////
     }
+    /** Exibe o faturamento total do comércio de produtos */
+/** Exibe o faturamento total do comércio de produtos */
+public static void obterFaturamento() {
+    cabecalho();
+    if (listaPedidos.vazia()) {
+        System.out.println("Nenhum pedido cadastrado ainda.");
+        return;
+    }
+
+    double faturamentoTotal = listaPedidos.obterSoma(p -> p.valorFinal());
+    System.out.printf("Faturamento do comércio de produtos: R$ %.2f%n", faturamentoTotal);
+}
+
+
+
+/** Conta os pedidos realizados entre duas datas informadas */
+/** Conta os pedidos realizados entre duas datas informadas */
+public static void contarPedidosPorData() {
+    cabecalho();
+    if (listaPedidos.vazia()) {
+        System.out.println("Nenhum pedido cadastrado ainda.");
+        return;
+    }
+
+    System.out.print("Informe a data inicial dos pedidos (dd/mm/aaaa): ");
+    String dataInicialStr = teclado.nextLine();
+    System.out.print("Informe a data final dos pedidos (dd/mm/aaaa): ");
+    String dataFinalStr = teclado.nextLine();
+
+    LocalDate dataInicial = LocalDate.parse(dataInicialStr, java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+    LocalDate dataFinal = LocalDate.parse(dataFinalStr, java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
+    int quantidade = listaPedidos.contar(p ->
+        p.getDataPedido().isAfter(dataInicial) && p.getDataPedido().isBefore(dataFinal)
+    );
+
+    System.out.printf("Quantidade de pedidos realizados entre as datas informadas: %d%n", quantidade);
+}
+
+
     
 	public static void main(String[] args) {
 		
@@ -233,17 +283,22 @@ public class App {
         
         int opcao = -1;
       
-        do{            opcao = menu();
-            switch (opcao) {
-                case 1 -> listarTodosOsProdutos();
-                case 2 -> mostrarProduto(localizarProduto());
-                case 3 -> mostrarProduto(localizarProdutoDescricao());
-                case 4 -> pedido = iniciarPedido();
-                case 5 -> finalizarPedido(pedido);
-                case 6 -> listarProdutosPedidosRecentes();
-            }
-            pausa();
-        }while(opcao != 0);       
+       do {
+    opcao = menu();
+    switch (opcao) {
+        case 1 -> listarTodosOsProdutos();
+        case 2 -> mostrarProduto(localizarProduto());
+        case 3 -> mostrarProduto(localizarProdutoDescricao());
+        case 4 -> pedido = iniciarPedido();
+        case 5 -> finalizarPedido(pedido);
+        case 7 -> obterFaturamento(); // chama o método de faturamento
+        case 8 -> contarPedidosPorData(); // chama o método de contagem por data
+        case 0 -> System.out.println("Saindo do sistema...");
+        default -> System.out.println("Opção inválida!");
+    }
+    pausa();
+} while(opcao != 0);
+   
 
         teclado.close();    
     }
